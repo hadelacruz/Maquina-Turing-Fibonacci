@@ -1,0 +1,156 @@
+# Máquina de Turing para calcular el n-ésimo número de Fibonacci
+
+states:
+  - q0        # Estado inicial
+  - q1        # Preparación
+  - q2        # Caso n=0
+  - q3        # Caso n=1
+  - q4        # Caso n>=2, preparar cálculo
+  - q5        # Copiar primer número
+  - q6        # Buscar segundo número
+  - q7        # Sumar
+  - q8        # Limpiar
+  - q9        # Decrementar contador
+  - q10       # Verificar contador
+  - q_accept  # Estado final
+
+input_alphabet:
+  - '1'       # Símbolo 1 (para notación unaria)
+
+tape_alphabet:
+  - '1'       # Símbolo 1
+  - 'X'       # Marcador
+  - '#'       # Separador
+  - '_'       # Símbolo blanco
+
+blank_symbol: '_'
+
+initial_state: q0
+
+final_states:
+  - q_accept
+
+# Función de transición
+# Cada transición especifica:
+# - from_state: estado actual
+# - read: símbolo leído
+# - to_state: nuevo estado
+# - write: símbolo a escribir
+# - move: dirección (L=izquierda, R=derecha, S=sin movimiento)
+transitions:
+  # --- Fase inicial: verificar entrada ---
+  
+  # Si la cinta está vacía, F(0) = 0
+  - from_state: q0
+    read: '_'
+    to_state: q_accept
+    write: '_'
+    move: S
+  
+  # Si hay al menos un 1, marcar y verificar
+  - from_state: q0
+    read: '1'
+    to_state: q1
+    write: 'X'
+    move: R
+  
+  # Buscar fin de la entrada o segundo 1
+  - from_state: q1
+    read: '1'
+    to_state: q4
+    write: '1'
+    move: R
+  
+  # Si solo hay un 1, F(1) = 1
+  - from_state: q1
+    read: '_'
+    to_state: q3
+    write: '_'
+    move: L
+  
+  # Caso F(1): devolver 1 a la cinta
+  - from_state: q3
+    read: 'X'
+    to_state: q_accept
+    write: '1'
+    move: S
+  
+  # --- Caso n >= 2: Inicializar con F(0)=0, F(1)=1 ---
+  
+  # Moverse al final de la entrada
+  - from_state: q4
+    read: '1'
+    to_state: q4
+    write: '1'
+    move: R
+  
+  # Encontrar fin e inicializar: escribir separador y F(1)=1
+  - from_state: q4
+    read: '_'
+    to_state: q5
+    write: '#'
+    move: R
+  
+  - from_state: q5
+    read: '_'
+    to_state: q6
+    write: '1'
+    move: R
+  
+  - from_state: q6
+    read: '_'
+    to_state: q7
+    write: '#'
+    move: R
+  
+  - from_state: q7
+    read: '_'
+    to_state: q8
+    write: '1'
+    move: L
+  
+  # --- Preparar para iteración ---
+  
+  # Buscar el inicio para decrementar contador
+  - from_state: q8
+    read: '1'
+    to_state: q8
+    write: '1'
+    move: L
+  
+  - from_state: q8
+    read: '#'
+    to_state: q8
+    write: '#'
+    move: L
+  
+  - from_state: q8
+    read: 'X'
+    to_state: q9
+    write: 'X'
+    move: R
+  
+  # Decrementar contador (reemplazar un 1 por X)
+  - from_state: q9
+    read: '1'
+    to_state: q10
+    write: 'X'
+    move: R
+  
+  # Verificar si quedan más iteraciones
+  - from_state: q10
+    read: '1'
+    to_state: q4
+    write: '1'
+    move: R
+  
+  # Si no quedan más, limpiar y preparar resultado
+  - from_state: q10
+    read: '#'
+    to_state: q_accept
+    write: '_'
+    move: R
+
+# TODO: Esta máquina es una versión MUY simplificada
+# TODO: Para valores grandes de n, el número de pasos crece exponencialmente
+# TODO: Una implementación completa requeriría más estados y lógica de suma
