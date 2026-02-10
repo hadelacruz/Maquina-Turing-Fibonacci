@@ -1,0 +1,651 @@
+# Máquina de Turing para calcular el n-ésimo número de Fibonacci
+# 
+# CONVENCIÓN:
+# - Entrada: n en notación unaria (n unos). Ej: n=3 -> "111"
+# - Salida: F(n) en notación unaria. Ej: F(5)=5 -> "11111"
+# - F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5...
+#
+# ESTRUCTURA DE LA CINTA:
+# [contador]$[a]#[b]
+# $ separa contador de a
+# # separa a de b
+#
+# ALGORITMO para (a,b) -> (b, a+b):
+# 1. Marcar todos los 1 de b con Y (preservar old_b)
+# 2. Copiar cada 1 de a al final de b (marcándolos como Z en a)
+# 3. Borrar a (Z -> _)
+# 4. Copiar cada Y de b a la posición de a (marcándolos como W)
+# 5. Restaurar W->1 en b
+# Resultado: new_a = old_b, new_b = old_a + old_b
+
+states:
+  - q0           # Inicial
+  - q1           # Verificar n>=2
+  - q_f1         # F(1)=1
+  - q_end        # Ir al final del contador
+  - q_init_a     # Escribir $1 (a=1)  
+  - q_init_sep   # Escribir #
+  - q_init_b     # Escribir 1 (b=1)
+  - q_rew        # Rebobinar al inicio
+  - q_dec        # Decrementar contador
+  - q_chk        # Verificar si quedan iteraciones
+  # --- Paso 1: Marcar b con Y ---
+  - q_go_b       # Ir a b
+  - q_mark_b     # Marcar 1->Y en b
+  # --- Paso 2: Copiar a al final de b ---
+  - q_go_a       # Ir a a
+  - q_mark_a     # Marcar 1->Z en a y ir a copiar
+  - q_to_end_b   # Ir al final de b
+  - q_back_a     # Volver a a para siguiente Z
+  # --- Paso 3: Borrar a ---
+  - q_del_a      # Borrar Zs en a
+  # --- Paso 4: Copiar Y de b a posición de a ---
+  - q_find_y     # Buscar Y en b  
+  - q_copy_y     # Marcar Y->W e ir a pegar en a
+  - q_ins_a      # Insertar 1 en posición de a
+  - q_carry_hash # Shift: traigo #
+  - q_carry_1    # Shift: traigo 1
+  - q_carry_W    # Shift: traigo W
+  - q_carry_Y    # Shift: traigo Y
+  - q_back_hash_l # Volver a # yendo a izquierda (después de shift)
+  - q_back_y     # Volver a b para siguiente Y
+  # --- Paso 5: Restaurar W->1 ---
+  - q_rest_w     # Restaurar W->1 en b
+  # --- Limpieza final ---
+  - q_clean      # Limpiar al final
+  - q_accept     # Aceptar
+
+input_alphabet:
+  - '1'
+
+tape_alphabet:
+  - '1'
+  - 'X'
+  - 'Y'
+  - 'Z'
+  - 'W'
+  - '#'
+  - '$'
+  - '_'
+
+blank_symbol: '_'
+initial_state: q0
+final_states:
+  - q_accept
+
+transitions:
+  # ========== CASOS BASE ==========
+  
+  # F(0) = 0: cinta vacía
+  - from_state: q0
+    read: '_'
+    to_state: q_accept
+    write: '_'
+    move: S
+
+  # n >= 1: marcar primer 1
+  - from_state: q0
+    read: '1'
+    to_state: q1
+    write: 'X'
+    move: R
+
+  # F(1) = 1: solo había un 1
+  - from_state: q1
+    read: '_'
+    to_state: q_f1
+    write: '_'
+    move: L
+
+  - from_state: q_f1
+    read: 'X'
+    to_state: q_accept
+    write: '1'
+    move: S
+
+  # n >= 2: continuar
+  - from_state: q1
+    read: '1'
+    to_state: q_end
+    write: '1'
+    move: R
+
+  # ========== INICIALIZACIÓN ==========
+
+  # Ir al final del contador
+  - from_state: q_end
+    read: '1'
+    to_state: q_end
+    write: '1'
+    move: R
+
+  # Escribir $ y a=1
+  - from_state: q_end
+    read: '_'
+    to_state: q_init_a
+    write: '$'
+    move: R
+
+  - from_state: q_init_a
+    read: '_'
+    to_state: q_init_sep
+    write: '1'
+    move: R
+
+  # Escribir # y b=1
+  - from_state: q_init_sep
+    read: '_'
+    to_state: q_init_b
+    write: '#'
+    move: R
+
+  - from_state: q_init_b
+    read: '_'
+    to_state: q_rew
+    write: '1'
+    move: L
+
+  # ========== REBOBINAR ==========
+
+  - from_state: q_rew
+    read: '1'
+    to_state: q_rew
+    write: '1'
+    move: L
+
+  - from_state: q_rew
+    read: 'Y'
+    to_state: q_rew
+    write: 'Y'
+    move: L
+
+  - from_state: q_rew
+    read: 'W'
+    to_state: q_rew
+    write: 'W'
+    move: L
+
+  - from_state: q_rew
+    read: '#'
+    to_state: q_rew
+    write: '#'
+    move: L
+
+  - from_state: q_rew
+    read: '$'
+    to_state: q_rew
+    write: '$'
+    move: L
+
+  - from_state: q_rew
+    read: '_'
+    to_state: q_rew
+    write: '_'
+    move: L
+
+  - from_state: q_rew
+    read: 'X'
+    to_state: q_dec
+    write: 'X'
+    move: R
+
+  # ========== DECREMENTAR CONTADOR ==========
+
+  - from_state: q_dec
+    read: 'X'
+    to_state: q_dec
+    write: 'X'
+    move: R
+
+  - from_state: q_dec
+    read: '1'
+    to_state: q_chk
+    write: 'X'
+    move: R
+
+  # Verificar si hay más iteraciones
+  - from_state: q_chk
+    read: '1'
+    to_state: q_go_b
+    write: '1'
+    move: R
+
+  # No más iteraciones, ir a limpiar
+  - from_state: q_chk
+    read: '$'
+    to_state: q_clean
+    write: '$'
+    move: R
+
+  # ========== PASO 1: MARCAR b CON Y ==========
+
+  # Ir a b (saltar contador y a)
+  - from_state: q_go_b
+    read: '1'
+    to_state: q_go_b
+    write: '1'
+    move: R
+
+  - from_state: q_go_b
+    read: '$'
+    to_state: q_go_b
+    write: '$'
+    move: R
+
+  - from_state: q_go_b
+    read: '#'
+    to_state: q_mark_b
+    write: '#'
+    move: R
+
+  # Marcar todos los 1 en b con Y
+  - from_state: q_mark_b
+    read: '1'
+    to_state: q_mark_b
+    write: 'Y'
+    move: R
+
+  # Terminamos de marcar b, volver a a para copiar
+  - from_state: q_mark_b
+    read: '_'
+    to_state: q_go_a
+    write: '_'
+    move: L
+
+  # ========== PASO 2: COPIAR a AL FINAL DE b ==========
+
+  # Volver a a
+  - from_state: q_go_a
+    read: 'Y'
+    to_state: q_go_a
+    write: 'Y'
+    move: L
+
+  - from_state: q_go_a
+    read: '#'
+    to_state: q_go_a
+    write: '#'
+    move: L
+
+  - from_state: q_go_a
+    read: '1'
+    to_state: q_go_a
+    write: '1'
+    move: L
+
+  - from_state: q_go_a
+    read: 'Z'
+    to_state: q_go_a
+    write: 'Z'
+    move: L
+
+  - from_state: q_go_a
+    read: '$'
+    to_state: q_mark_a
+    write: '$'
+    move: R
+
+  # Marcar siguiente 1 en a como Z y copiar
+  - from_state: q_mark_a
+    read: '1'
+    to_state: q_to_end_b
+    write: 'Z'
+    move: R
+
+  - from_state: q_mark_a
+    read: 'Z'
+    to_state: q_mark_a
+    write: 'Z'
+    move: R
+
+  # No hay más 1s en a, pasar a borrar a
+  - from_state: q_mark_a
+    read: '#'
+    to_state: q_del_a
+    write: '#'
+    move: L
+
+  # Ir al final de b
+  - from_state: q_to_end_b
+    read: 'Z'
+    to_state: q_to_end_b
+    write: 'Z'
+    move: R
+
+  - from_state: q_to_end_b
+    read: '#'
+    to_state: q_to_end_b
+    write: '#'
+    move: R
+
+  - from_state: q_to_end_b
+    read: 'Y'
+    to_state: q_to_end_b
+    write: 'Y'
+    move: R
+
+  - from_state: q_to_end_b
+    read: '1'
+    to_state: q_to_end_b
+    write: '1'
+    move: R
+
+  # Llegamos al final de b, escribir 1 y volver
+  - from_state: q_to_end_b
+    read: '_'
+    to_state: q_back_a
+    write: '1'
+    move: L
+
+  # Volver a a
+  - from_state: q_back_a
+    read: '1'
+    to_state: q_back_a
+    write: '1'
+    move: L
+
+  - from_state: q_back_a
+    read: 'Y'
+    to_state: q_back_a
+    write: 'Y'
+    move: L
+
+  - from_state: q_back_a
+    read: '#'
+    to_state: q_back_a
+    write: '#'
+    move: L
+
+  - from_state: q_back_a
+    read: 'Z'
+    to_state: q_mark_a
+    write: 'Z'
+    move: R
+
+  # ========== PASO 3: BORRAR a ==========
+
+  - from_state: q_del_a
+    read: 'Z'
+    to_state: q_del_a
+    write: '_'
+    move: L
+
+  # Terminamos de borrar, ir a buscar el # para luego buscar Y
+  - from_state: q_del_a
+    read: '$'
+    to_state: q_go_hash_for_y
+    write: '$'
+    move: R
+
+  # Atravesar zona de a borrada hasta #
+  - from_state: q_go_hash_for_y
+    read: '_'
+    to_state: q_go_hash_for_y
+    write: '_'
+    move: R
+
+  - from_state: q_go_hash_for_y
+    read: '#'
+    to_state: q_find_y
+    write: '#'
+    move: R
+
+  # ========== PASO 4: COPIAR Y DE b A POSICIÓN DE a ==========
+
+  # Buscar Y en b
+  - from_state: q_find_y
+    read: '1'
+    to_state: q_find_y
+    write: '1'
+    move: R
+
+  - from_state: q_find_y
+    read: 'W'
+    to_state: q_find_y
+    write: 'W'
+    move: R
+
+  - from_state: q_find_y
+    read: '#'
+    to_state: q_find_y
+    write: '#'
+    move: R
+
+  # Encontramos Y, marcar como W e ir a insertar en a
+  - from_state: q_find_y
+    read: 'Y'
+    to_state: q_copy_y
+    write: 'W'
+    move: L
+
+  # No hay más Y, ir a restaurar W->1
+  - from_state: q_find_y
+    read: '_'
+    to_state: q_rest_w
+    write: '_'
+    move: L
+
+  # Ir a posición de a para insertar
+  - from_state: q_copy_y
+    read: 'W'
+    to_state: q_copy_y
+    write: 'W'
+    move: L
+
+  - from_state: q_copy_y
+    read: '#'
+    to_state: q_copy_y
+    write: '#'
+    move: L
+
+  - from_state: q_copy_y
+    read: '1'
+    to_state: q_copy_y
+    write: '1'
+    move: L
+
+  - from_state: q_copy_y
+    read: '_'
+    to_state: q_copy_y
+    write: '_'
+    move: L
+
+  # Llegamos a $, insertar 1 después
+  - from_state: q_copy_y
+    read: '$'
+    to_state: q_ins_a
+    write: '$'
+    move: R
+
+  # Buscar hueco para insertar
+  - from_state: q_ins_a
+    read: '1'
+    to_state: q_ins_a
+    write: '1'
+    move: R
+
+  # Insertar 1 en el hueco
+  - from_state: q_ins_a
+    read: '_'
+    to_state: q_back_y
+    write: '1'
+    move: R
+
+  # No hay hueco, necesitamos hacer shift: escribir 1, desplazar # y todo lo que sigue
+  - from_state: q_ins_a
+    read: '#'
+    to_state: q_carry_hash
+    write: '1'
+    move: R
+
+  # ========== SHIFT: desplazar símbolos a la derecha ==========
+
+  # Traigo # y lo escribo, guardo lo que leo
+  - from_state: q_carry_hash
+    read: '1'
+    to_state: q_carry_1
+    write: '#'
+    move: R
+  - from_state: q_carry_hash
+    read: 'W'
+    to_state: q_carry_W
+    write: '#'
+    move: R
+  - from_state: q_carry_hash
+    read: 'Y'
+    to_state: q_carry_Y
+    write: '#'
+    move: R
+  - from_state: q_carry_hash
+    read: '_'
+    to_state: q_back_hash_l
+    write: '#'
+    move: L
+
+  # Traigo 1 y lo escribo
+  - from_state: q_carry_1
+    read: '1'
+    to_state: q_carry_1
+    write: '1'
+    move: R
+  - from_state: q_carry_1
+    read: 'W'
+    to_state: q_carry_W
+    write: '1'
+    move: R
+  - from_state: q_carry_1
+    read: 'Y'
+    to_state: q_carry_Y
+    write: '1'
+    move: R
+  - from_state: q_carry_1
+    read: '_'
+    to_state: q_back_hash_l
+    write: '1'
+    move: L
+
+  # Traigo W y lo escribo
+  - from_state: q_carry_W
+    read: '1'
+    to_state: q_carry_1
+    write: 'W'
+    move: R
+  - from_state: q_carry_W
+    read: 'W'
+    to_state: q_carry_W
+    write: 'W'
+    move: R
+  - from_state: q_carry_W
+    read: 'Y'
+    to_state: q_carry_Y
+    write: 'W'
+    move: R
+  - from_state: q_carry_W
+    read: '_'
+    to_state: q_back_hash_l
+    write: 'W'
+    move: L
+
+  # Traigo Y y lo escribo
+  - from_state: q_carry_Y
+    read: '1'
+    to_state: q_carry_1
+    write: 'Y'
+    move: R
+  - from_state: q_carry_Y
+    read: 'W'
+    to_state: q_carry_W
+    write: 'Y'
+    move: R
+  - from_state: q_carry_Y
+    read: 'Y'
+    to_state: q_carry_Y
+    write: 'Y'
+    move: R
+  - from_state: q_carry_Y
+    read: '_'
+    to_state: q_back_hash_l
+    write: 'Y'
+    move: L
+
+  # ========== VOLVER AL # DESPUÉS DEL SHIFT ==========
+  - from_state: q_back_hash_l
+    read: 'Y'
+    to_state: q_back_hash_l
+    write: 'Y'
+    move: L
+  - from_state: q_back_hash_l
+    read: 'W'
+    to_state: q_back_hash_l
+    write: 'W'
+    move: L
+  - from_state: q_back_hash_l
+    read: '1'
+    to_state: q_back_hash_l
+    write: '1'
+    move: L
+  - from_state: q_back_hash_l
+    read: '#'
+    to_state: q_find_y
+    write: '#'
+    move: R
+
+  # Volver a buscar más Y
+  - from_state: q_back_y
+    read: '_'
+    to_state: q_back_y
+    write: '_'
+    move: R
+
+  - from_state: q_back_y
+    read: '1'
+    to_state: q_back_y
+    write: '1'
+    move: R
+
+  - from_state: q_back_y
+    read: '#'
+    to_state: q_find_y
+    write: '#'
+    move: R
+
+  # ========== PASO 5: RESTAURAR W->1 ==========
+
+  - from_state: q_rest_w
+    read: 'W'
+    to_state: q_rest_w
+    write: '1'
+    move: L
+
+  - from_state: q_rest_w
+    read: '1'
+    to_state: q_rest_w
+    write: '1'
+    move: L
+
+  - from_state: q_rest_w
+    read: '#'
+    to_state: q_rew
+    write: '#'
+    move: L
+
+  # ========== LIMPIEZA FINAL ==========
+
+  # Borrar a, dejar solo b como resultado
+  - from_state: q_clean
+    read: '1'
+    to_state: q_clean
+    write: '_'
+    move: R
+
+  - from_state: q_clean
+    read: '_'
+    to_state: q_clean
+    write: '_'
+    move: R
+
+  - from_state: q_clean
+    read: '#'
+    to_state: q_accept
+    write: '_'
+    move: R

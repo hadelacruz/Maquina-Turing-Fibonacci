@@ -1,4 +1,5 @@
 import time
+
 from tape import Tape
 
 
@@ -12,8 +13,7 @@ class TuringSimulator:
         self.step_count = 0
         self.verbose = verbose
         self.execution_time = 0
-        
-        # TODO: Limitar número máximo de pasos para evitar loops infinitos
+        self.configurations = []  # Guardar configuraciones para análisis
     
     def step(self):
         # Verificar si estamos en estado final
@@ -28,11 +28,22 @@ class TuringSimulator:
         
         if transition is None:
             # No hay transición definida, la máquina se detiene
-            print(f"\n⚠ No hay transición definida para ({self.current_state}, '{current_symbol}')")
+            if self.verbose:
+                print(f"\n⚠ No hay transición definida para ({self.current_state}, '{current_symbol}')")
             return False
         
         # Aplicar transición
         new_state, new_symbol, direction = transition
+        
+        # Guardar configuración actual
+        config = {
+            'step': self.step_count,
+            'state': self.current_state,
+            'head_position': self.tape.get_head_position(),
+            'tape_content': self.tape.get_full_content(),
+            'transition': (self.current_state, current_symbol, new_state, new_symbol, direction)
+        }
+        self.configurations.append(config)
         
         # Mostrar transición si verbose está activado
         if self.verbose:
@@ -49,13 +60,14 @@ class TuringSimulator:
     
     def run(self, max_steps=10000):
 
-        print("=" * 60)
-        print("INICIANDO SIMULACIÓN DE MÁQUINA DE TURING")
-        print("=" * 60)
-        print(f"Estado inicial: {self.current_state}")
-        print(f"Entrada: {self.tape.get_full_content() or '(vacía)'}")
-        print("=" * 60)
-        print()
+        if self.verbose:
+            print("=" * 60)
+            print("INICIANDO SIMULACIÓN DE MÁQUINA DE TURING")
+            print("=" * 60)
+            print(f"Estado inicial: {self.current_state}")
+            print(f"Entrada: {self.tape.get_full_content() or '(vacía)'}")
+            print("=" * 60)
+            print()
         
         start_time = time.time()
         
@@ -68,10 +80,11 @@ class TuringSimulator:
         self.execution_time = end_time - start_time
         
         # Mostrar configuración final
-        print("\n" + "=" * 60)
-        print("CONFIGURACIÓN FINAL")
-        print("=" * 60)
-        self.show_configuration()
+        if self.verbose:
+            print("\n" + "=" * 60)
+            print("CONFIGURACIÓN FINAL")
+            print("=" * 60)
+            self.show_configuration()
         
         # Resultados
         results = {
@@ -80,20 +93,20 @@ class TuringSimulator:
             'execution_time': self.execution_time,
             'tape_content': self.tape.get_full_content(),
             'halted': self.step_count < max_steps,
-            'accepted': self.machine.is_final_state(self.current_state)
+            'accepted': self.machine.is_final_state(self.current_state),
+            'configurations': self.configurations
         }
         
-        print("\n" + "=" * 60)
-        print("RESULTADOS")
-        print("=" * 60)
-        print(f"Estado final: {results['final_state']}")
-        print(f"Aceptado: {'✓ Sí' if results['accepted'] else '✗ No'}")
-        print(f"Total de pasos: {results['step_count']}")
-        print(f"Tiempo de ejecución: {results['execution_time']:.6f} segundos")
-        print(f"Contenido final de la cinta: {results['tape_content'] or '(vacía)'}")
-        print("=" * 60)
-        
-        # TODO: Comparar tiempo real vs número de transiciones
+        if self.verbose:
+            print("\n" + "=" * 60)
+            print("RESULTADOS")
+            print("=" * 60)
+            print(f"Estado final: {results['final_state']}")
+            print(f"Aceptado: {'✓ Sí' if results['accepted'] else '✗ No'}")
+            print(f"Total de pasos: {results['step_count']}")
+            print(f"Tiempo de ejecución: {results['execution_time']:.6f} segundos")
+            print(f"Contenido final de la cinta: {results['tape_content'] or '(vacía)'}")
+            print("=" * 60)
         
         return results
     
@@ -108,11 +121,13 @@ class TuringSimulator:
         print(f"  Estado: {self.current_state}")
         print(f"  Cinta:  {content}")
         print(f"          {pointer}")
-        
-        # TODO: Separar impresión de configuraciones del motor de simulación
     
     def get_step_count(self):
         return self.step_count
     
     def get_execution_time(self):
         return self.execution_time
+    
+    def get_configurations(self):
+        """Retorna el historial de configuraciones."""
+        return self.configurations
