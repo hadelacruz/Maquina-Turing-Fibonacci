@@ -111,7 +111,6 @@ def main():
 
 
 def fibonacci_iterative(n):
-    """Calcula F(n) de forma iterativa para verificación."""
     if n <= 0:
         return 0
     if n == 1:

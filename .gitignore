@@ -112,3 +112,5 @@ output/
 results/
 *.tmp
 *.bak
+
+*png

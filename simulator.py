@@ -1,7 +1,5 @@
 import time
-
 from tape import Tape
-
 
 class TuringSimulator:
 
@@ -29,7 +27,7 @@ class TuringSimulator:
         if transition is None:
             # No hay transición definida, la máquina se detiene
             if self.verbose:
-                print(f"\n⚠ No hay transición definida para ({self.current_state}, '{current_symbol}')")
+                print(f"\n- No hay transición definida para ({self.current_state}, '{current_symbol}')")
             return False
         
         # Aplicar transición
@@ -129,5 +127,4 @@ class TuringSimulator:
         return self.execution_time
     
     def get_configurations(self):
-        """Retorna el historial de configuraciones."""
         return self.configurations
