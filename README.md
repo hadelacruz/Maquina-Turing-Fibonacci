@@ -186,7 +186,7 @@ F(4)=3 ✓   F(9)=34 ✓
 ## 👤 Autor
 
 **hadelacruz** - Universidad del Valle de Guatemala
-
+**Jose Auyón** 
 ---
 
 *Proyecto desarrollado para el curso de Algoritmos*

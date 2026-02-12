@@ -212,39 +212,94 @@ def print_complexity_analysis(n_values, steps):
     print("ANÁLISIS DE COMPLEJIDAD")
     print("=" * 60)
     
-    if len(n_values) < 2:
+    if len(n_values) < 3:
         print("Datos insuficientes para análisis.")
         return
     
-    # Calcular ratios
-    print("\nRatios de crecimiento:")
-    print("-" * 40)
+    # Filtrar valores donde steps > 0
+    valid_idx = [i for i in range(len(steps)) if steps[i] > 0]
+    if len(valid_idx) < 3:
+        print("Datos insuficientes para análisis.")
+        return
     
-    for i in range(1, len(n_values)):
-        if n_values[i-1] > 0 and steps[i-1] > 0:
-            ratio = steps[i] / steps[i-1] if steps[i-1] != 0 else 0
-            print(f"  n={n_values[i]:>3}: {steps[i]:>8} pasos (ratio: {ratio:.2f}x)")
+    # Calcular ratios consecutivos
+    ratios = []
+    print("\nRatios de crecimiento consecutivos:")
+    print("-" * 45)
     
-    # Inferir complejidad
-    avg_ratio = np.mean([steps[i] / steps[i-1] for i in range(1, len(steps)) if steps[i-1] > 0])
+    for i in range(1, len(valid_idx)):
+        prev_i = valid_idx[i-1]
+        curr_i = valid_idx[i]
+        if steps[prev_i] > 0:
+            ratio = steps[curr_i] / steps[prev_i]
+            ratios.append(ratio)
+            print(f"  n={n_values[curr_i]:>3}: {steps[curr_i]:>8} pasos (ratio: {ratio:.2f}x)")
     
-    print("\n" + "-" * 40)
-    print(f"Ratio promedio de crecimiento: {avg_ratio:.2f}")
+    if len(ratios) < 2:
+        print("Datos insuficientes para análisis.")
+        return
     
-    # Clasificar complejidad
-    if avg_ratio < 1.2:
-        complexity = "O(n) - Lineal"
-    elif avg_ratio < 1.5:
-        complexity = "O(n log n) - Casi lineal"
-    elif avg_ratio < 2.5:
-        complexity = "O(n²) - Cuadrática"
-    elif avg_ratio < 3.5:
-        complexity = "O(n³) - Cúbica"
+    # Análisis del patrón de crecimiento
+    # Ignorar primeros ratios (comportamiento inestable para n pequeños)
+    stable_ratios = ratios[3:] if len(ratios) > 5 else ratios[1:] if len(ratios) > 2 else ratios
+    
+    avg_ratio = np.mean(stable_ratios) if stable_ratios else np.mean(ratios)
+    std_ratio = np.std(stable_ratios) if stable_ratios else np.std(ratios)
+    last_ratios = ratios[-3:] if len(ratios) >= 3 else ratios
+    converging_ratio = np.mean(last_ratios)
+    
+    print("\n" + "-" * 45)
+    print(f"Ratio promedio (valores estables): {avg_ratio:.3f}")
+    print(f"Desviación estándar: {std_ratio:.3f}")
+    print(f"Ratio convergente (últimos valores): {converging_ratio:.3f}")
+    
+    # Detectar tipo de crecimiento
+    # Para exponencial: ratio constante > 1
+    # Para polinomial O(n^k): ratio debería → 1 cuando n → ∞
+    
+    PHI_SQUARED = 2.618  # φ² ≈ (1.618)²
+    
+    print("\n" + "-" * 45)
+    print("INTERPRETACIÓN:")
+    
+    # Si el ratio es aproximadamente constante y > 1.5, es exponencial
+    # Usar el ratio de valores estables para la detección
+    is_ratio_stable = std_ratio < 0.3 or (len(stable_ratios) >= 3 and np.std(stable_ratios[-3:]) < 0.2)
+    
+    if is_ratio_stable and avg_ratio > 1.8:
+        # Verificar si coincide con φ² (caso Fibonacci)
+        if abs(avg_ratio - PHI_SQUARED) < 0.5 or abs(converging_ratio - PHI_SQUARED) < 0.5:
+            print(f"\n✓ Complejidad: O(φ^(2n)) ≈ O(2.618^n)")
+            print(f"  Equivalente a: O(F(n)²) donde F(n) es el n-ésimo Fibonacci")
+            print(f"\n  El ratio {converging_ratio:.3f} ≈ φ² = {PHI_SQUARED:.3f}")
+            print(f"  Esto es característico de algoritmos que operan")
+            print(f"  sobre los valores de Fibonacci (tamaño exponencial).")
+        else:
+            base = converging_ratio
+            print(f"\n✓ Complejidad: O({base:.2f}^n) - Exponencial")
+            print(f"  El ratio constante ≈{converging_ratio:.2f} indica crecimiento exponencial.")
+    
+    # Si el ratio decrece hacia 1, es polinomial
+    elif converging_ratio < 1.3 and avg_ratio < 2:
+        print(f"\n✓ Complejidad: O(n) - Lineal")
+    elif converging_ratio < 1.8:
+        print(f"\n✓ Complejidad: O(n log n) - Cuasilineal")
     else:
-        complexity = "O(2^n) - Exponencial"
+        # Intentar ajuste polinomial para estimar el grado
+        log_n = np.log(np.array([n_values[i] for i in valid_idx[1:]]))
+        log_steps = np.log(np.array([steps[i] for i in valid_idx[1:]]))
+        
+        # Regresión log-log para estimar el exponente
+        if len(log_n) > 1:
+            slope, _ = np.polyfit(log_n, log_steps, 1)
+            print(f"\n⚠ Patrón no conclusivo. Análisis adicional:")
+            print(f"  - Pendiente log-log: {slope:.2f}")
+            if slope < 2.5:
+                print(f"  - Sugiere O(n^{slope:.1f})")
+            else:
+                print(f"  - Probablemente exponencial con base ≈{converging_ratio:.2f}")
     
-    print(f"Complejidad estimada: {complexity}")
-    print("=" * 60)
+    print("\n" + "=" * 60)
 
 
 def main():
