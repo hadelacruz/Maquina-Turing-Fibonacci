@@ -1,8 +1,3 @@
-"""
-Módulo de análisis empírico para la Máquina de Turing de Fibonacci.
-Genera diagramas de dispersión y regresión polinomial.
-"""
-
 import time
 
 import matplotlib.pyplot as plt
@@ -13,17 +8,6 @@ from simulator import TuringSimulator
 
 
 def run_analysis(machine_file="fibonacci_new.yaml", test_values=None, max_steps=100000):
-    """
-    Ejecuta análisis empírico de la máquina de Turing para múltiples valores de n.
-    
-    Args:
-        machine_file: Archivo de configuración de la máquina
-        test_values: Lista de valores n a probar
-        max_steps: Máximo de pasos por ejecución
-    
-    Returns:
-        dict con resultados del análisis
-    """
     if test_values is None:
         test_values = list(range(0, 11))
     
@@ -79,13 +63,6 @@ def run_analysis(machine_file="fibonacci_new.yaml", test_values=None, max_steps=
 
 
 def plot_analysis(results, output_file="analysis_plot.png"):
-    """
-    Genera diagrama de dispersión y regresión polinomial.
-    
-    Args:
-        results: Diccionario con resultados del análisis
-        output_file: Nombre del archivo de imagen a generar
-    """
     if results is None:
         print("No hay resultados para graficar.")
         return
@@ -154,9 +131,6 @@ def plot_analysis(results, output_file="analysis_plot.png"):
 
 
 def find_best_polynomial_degree(x, y, max_degree=5):
-    """
-    Encuentra el mejor grado de polinomio usando R².
-    """
     best_degree = 1
     best_r2 = -np.inf
     
@@ -183,9 +157,6 @@ def find_best_polynomial_degree(x, y, max_degree=5):
 
 
 def format_polynomial(coeffs):
-    """
-    Formatea los coeficientes del polinomio como ecuación legible.
-    """
     terms = []
     degree = len(coeffs) - 1
     
@@ -205,9 +176,6 @@ def format_polynomial(coeffs):
 
 
 def print_complexity_analysis(n_values, steps):
-    """
-    Imprime análisis de la complejidad basado en los datos.
-    """
     print("\n" + "=" * 60)
     print("ANÁLISIS DE COMPLEJIDAD")
     print("=" * 60)
@@ -248,7 +216,6 @@ def print_complexity_analysis(n_values, steps):
 
 
 def main():
-    """Función principal para ejecutar el análisis."""
     import sys
 
     # Valores de prueba por defecto

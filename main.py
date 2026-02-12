@@ -111,7 +111,6 @@ def main():
 
 
 def fibonacci_iterative(n):
-    """Calcula F(n) de forma iterativa para verificación."""
     if n <= 0:
         return 0
     if n == 1:
@@ -124,7 +123,6 @@ def fibonacci_iterative(n):
 
 
 def run_batch_analysis(machine):
-    """Ejecuta análisis batch para múltiples valores de n."""
     print("\n" + "=" * 60)
     print("ANÁLISIS BATCH")
     print("=" * 60)

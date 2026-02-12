@@ -129,5 +129,4 @@ class TuringSimulator:
         return self.execution_time
     
     def get_configurations(self):
-        """Retorna el historial de configuraciones."""
         return self.configurations
