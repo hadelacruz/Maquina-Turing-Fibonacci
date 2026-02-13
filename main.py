@@ -4,7 +4,7 @@ from loader import load_from_file
 from simulator import TuringSimulator
 
 
-def main():
+def run_single_simulation():
     
     print("SIMULADOR DE MÁQUINA DE TURING - FIBONACCI")
     print("=" * 60)
@@ -85,9 +85,9 @@ def main():
     # Verificar contra valor esperado
     expected = fibonacci_iterative(n)
     if fib_result == expected:
-        print(f"  ✓ Correcto! (esperado: {expected})")
+        print(f"  Correcto! (esperado: {expected})")
     else:
-        print(f"  ✗ Incorrecto (esperado: {expected})")
+        print(f"  Incorrecto (esperado: {expected})")
     
     # Análisis de complejidad
     print("\n" + "=" * 60)
@@ -102,12 +102,13 @@ def main():
     if n > 0:
         ratio = steps / n
         print(f"Relación pasos/n: {ratio:.2f}")
-        print(f"\n💡 Este dato ayuda a inferir la complejidad O(f(n))")
+        print(f"\n Este dato ayuda a inferir la complejidad O(f(n))")
         print("   Ejecute con diferentes valores de n para ver el crecimiento.")
         print("   Use 'python analysis.py' para análisis empírico completo.")
     
     print("\n" + "=" * 60)
-    print("- Simulación completada\n")
+    print(" Simulación completada")
+    print("=" * 60)
 
 
 def fibonacci_iterative(n):
@@ -147,6 +148,136 @@ def run_batch_analysis(machine):
     
     print("-" * 60)
     print("\nPara análisis empírico con gráficos, ejecute: python analysis.py")
+
+
+def run_tests():
+    """Ejecuta la suite completa de tests"""
+    from test_fib import test_fibonacci_sequence
+    
+    print("\n" + "=" * 60)
+    print("EJECUTANDO TESTS DE FIBONACCI")
+    print("=" * 60 + "\n")
+    
+    test_fibonacci_sequence()
+    
+    print("\n" + "=" * 60)
+    print(" TESTS COMPLETADOS")
+    print("=" * 60)
+
+
+def run_full_analysis():
+    """Ejecuta el análisis de complejidad y genera gráficos"""
+    from analysis import run_analysis, plot_analysis
+    
+    print("\n" + "=" * 60)
+    print("ANÁLISIS DE COMPLEJIDAD")
+    print("=" * 60 + "\n")
+    
+    print("Ejecutando simulaciones para n=0 hasta n=10...")
+    results = run_analysis()
+    
+    if results:
+        print("\nGenerando gráficos...")
+        plot_analysis(results)
+        print("\n" + "=" * 60)
+        print(" Análisis completado. Revisa los gráficos generados.")
+        print("=" * 60)
+    else:
+        print("\n" + "=" * 60)
+        print(" Error durante el análisis.")
+        print("=" * 60)
+
+
+def show_machine_info():
+    """Muestra información sobre la máquina de Turing cargada"""
+    try:
+        machine = load_from_file('fibonacci_new.yaml')
+        
+        print("\n" + "=" * 60)
+        print("INFORMACIÓN DE LA MÁQUINA DE TURING")
+        print("=" * 60)
+        print(f"\nEstados: {len(machine.states)}")
+        print(f"Alfabeto de entrada: {machine.input_alphabet}")
+        print(f"Alfabeto de cinta: {machine.tape_alphabet}")
+        print(f"Estado inicial: {machine.initial_state}")
+        print(f"Estados finales: {machine.final_states}")
+        print(f"Número de transiciones: {len(machine.transitions)}")
+        print(f"Símbolo blanco: '{machine.blank_symbol}'")
+        print("\n" + "=" * 60)
+        
+    except FileNotFoundError:
+        print("Error: No se encontró el archivo 'fibonacci_new.yaml'")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+
+
+def run_all():
+    """Ejecuta todas las funcionalidades en secuencia"""
+    print("\n" + "=" * 60)
+    print("EJECUCIÓN COMPLETA")
+    print("=" * 60)
+    
+    # 1. Tests
+    run_tests()
+    input("\nPresiona Enter para continuar con el análisis...")
+    
+    # 2. Análisis
+    run_full_analysis()
+    input("\nPresiona Enter para continuar con una simulación...")
+    
+    # 3. Simulación individual
+    run_single_simulation()
+    
+    print("\n" + "=" * 60)
+    print(" EJECUCIÓN COMPLETA FINALIZADA")
+    print("=" * 60)
+
+
+def print_menu():
+    """Imprime el menú principal"""
+    print("\n" + "=" * 60)
+    print("  SIMULADOR DE MÁQUINA DE TURING - FIBONACCI")
+    print("=" * 60)
+    print("\n1. Ejecutar simulación individual")
+    print("2. Ejecutar tests completos")
+    print("3. Ejecutar análisis de complejidad")
+    print("4. Mostrar información de la máquina")
+    print("5. Ejecutar todo (tests + análisis + simulación)")
+    print("0. Salir")
+    print("\n" + "=" * 60)
+
+
+def main():
+    """Punto de entrada principal con menú interactivo"""
+    
+    # Si hay argumentos de línea de comandos, ejecutar modo antiguo
+    if len(sys.argv) > 1:
+        run_single_simulation()
+        return
+    
+    while True:
+        print_menu()
+        
+        choice = input("Seleccione una opción: ").strip()
+        
+        if choice == '1':
+            run_single_simulation()
+        elif choice == '2':
+            run_tests()
+        elif choice == '3':
+            run_full_analysis()
+        elif choice == '4':
+            show_machine_info()
+        elif choice == '5':
+            run_all()
+        elif choice == '0':
+            print("\n¡Hasta luego!")
+            sys.exit(0)
+        else:
+            print("\n Opción inválida. Por favor seleccione una opción válida.")
+        
+        print("\n" + "-" * 60)
+        input(">>> Presiona Enter para volver al menú principal... ")
 
 
 if __name__ == "__main__":
