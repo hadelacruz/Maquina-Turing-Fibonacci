@@ -6,6 +6,11 @@ Simulador de una Máquina de Turing que calcula la secuencia de Fibonacci en not
 
 Este proyecto implementa un simulador de Máquina de Turing determinista que, dado un número `n` en notación unaria (`111` = 3), calcula `F(n)` (el n-ésimo número de Fibonacci) y lo escribe en la cinta en notación unaria.
 
+## Video
+
+[![Ver video](https://img.youtube.com/vi/HJk6L2nPIa8/0.jpg)](https://youtu.be/HJk6L2nPIa8)
+
+
 ## Instalación
 
 1. **Clonar el repositorio**
